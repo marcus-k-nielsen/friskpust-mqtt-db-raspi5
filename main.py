@@ -15,9 +15,7 @@ def tick(timer):
 
 
 # Opretter hardware timer
-# type: ignore bruges fordi editoren forventer argumenter
-tim = Timer()  # type: ignore
-
+tim = Timer()  
 
 # Starter periodisk timer interrupt
 # freq=1000 betyder:
