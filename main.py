@@ -1,72 +1,102 @@
 from machine import Timer
-from C_LED import *
+
+# Importerer TaskManager og moduler
 from C_TaskManager import *
 from C_Microphone import *
-
-#############################################################
-# Import external modules
-#############################################################
-from C_TaskManager import *
 from C_AHT21 import *
 
-#############################################################
-# Module setup
-#############################################################
 
-#############################################################
-# Hardware config
-#############################################################
-# 1 ms timer interrupt:
-# Define the IRQ callback ISR:
+# Timer interrupt callback
+# Denne funktion køres hvert millisekund
+# og opdaterer alle task timere
 def tick(timer):
+
     C_TM_Update_ISR()
 
-# Setup timer interrupt:
-# It is necessary to ignore a warning, because the interpreter 
-# expects an argument for the Timer() function.
-tim = Timer() # type: ignore
-tim.init(freq=1000, mode=Timer.PERIODIC, callback=tick)
 
-# Initialize external modules
-C_LED_Init()
+# Opretter hardware timer
+# type: ignore bruges fordi editoren forventer argumenter
+tim = Timer()  # type: ignore
+
+
+# Starter periodisk timer interrupt
+# freq=1000 betyder:
+# 1000 Hz = 1 ms interval
+tim.init(
+
+    # Timer frekvens
+    freq=1000,
+
+    # Periodisk betyder at timeren kører konstant
+    mode=Timer.PERIODIC,
+
+    # Funktion som køres ved hvert interrupt
+    callback=tick
+)
+
+
+# Initialiserer moduler
 C_MIC_Init()
-# Start tasks
-C_TM_CreateTask( "LED TASK", 100, C_LED_Task )
-C_TM_CreateTask( "MIC TASK", MIC_TASK_INTERVAL_MS, C_MIC_Task )
-C_TM_CreateTask("DEBUG TASK",500,C_Debug_Task)
-# Add more tasks here...
-#############################################################
-# Local variables
-#############################################################
-
-#############################################################
-# Init external modules
-#############################################################
 C_AHT21_Init()
 
-#############################################################
-# Private functions
-#############################################################
-    
-#############################################################
-# Start tasks
-#############################################################
-C_TM_CreateTask( "AHT21 TASK", 100, C_AHT21_Task )
+
+# Registrerer mikrofon task i TaskManageren
+C_TM_CreateTask(
+
+    # Task navn
+    "MIC TASK",
+
+    # Hvor ofte tasken skal køres
+    MIC_TASK_INTERVAL_MS,
+
+    # Funktion som skal køres
+    C_MIC_Task
+)
 
 
-###################################################################################################
-# Application is now ready to fly...
-###################################################################################################
+# Debug task som printer lydniveau
+C_TM_CreateTask(
+
+    "DEBUG TASK",
+
+    # Kører hver 500 ms
+    500,
+
+    C_Debug_Task
+)
+
+
+# Temperatur og luftfugtighed task
+C_TM_CreateTask(
+
+    "AHT21 TASK",
+
+    # Kører hver 100 ms
+    100,
+
+    C_AHT21_Task
+)
+
+
 print("Application running...")
 
-# Main loop: Simply calls the TM as fast as possible
-# TM is now in control of the system.
+
+# Main loop
+# TaskManageren styrer nu systemet
 try:
+
     while True:
+
+        # Kører tasks som er klar
         C_TM_Execute()
+
+
+# Stopper programmet sikkert ved CTRL+C
 except KeyboardInterrupt:
+
+
+    # Stopper hardware timeren
     tim.deinit()
-    print( "Application exit")
-finally:
-    # Clean up before exit
-    pass
+
+
+    print("Application exit")
