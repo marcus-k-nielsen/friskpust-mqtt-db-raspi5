@@ -1,8 +1,8 @@
 # Event manager modul
 # Håndterer thresholds, states og event detection
 
-from C_Microphone import *
-from C_AHT21 import *
+from microphone import *
+from aht21 import *
 
 import ujson
 
@@ -11,10 +11,10 @@ import ujson
 # SOUND STATES
 # =====================================================
 
-STATE_SOUND_VERY_LOW = 0
+STATE_SOUND_QUIET = 0
 STATE_SOUND_GOOD = 1
-STATE_SOUND_HIGH = 2
-STATE_SOUND_VERY_HIGH = 3
+STATE_SOUND_LOUD = 2
+STATE_SOUND_VERY_LOUD = 3
 
 
 # =====================================================
@@ -49,184 +49,141 @@ STATE_ECO2_BAD = 1
 # CURRENT STATES
 # =====================================================
 
-iSoundState = STATE_SOUND_GOOD
-
-iTempState = STATE_TEMP_GOOD
-
-iHumidityState = STATE_HUMIDITY_GOOD
-
-iEco2State = STATE_ECO2_GOOD
-
-
-# =====================================================
-# PLACEHOLDER VALUE
-# =====================================================
-
-# ENS160 er ikke implementeret endnu
-# Midlertidig test værdi
-fEco2 = 0.05
-
+sound_state = STATE_SOUND_GOOD
+temp_state = STATE_TEMP_GOOD
+humidity_state = STATE_HUMIDITY_GOOD
+eco2_state = STATE_ECO2_GOOD
 
 # =====================================================
 # CHECK EVENTS
 # =====================================================
 
-def C_EVENT_CheckEvents():
+def check_events():
 
-    global iSoundState
-    global iTempState
-    global iHumidityState
-    global iEco2State
-
-
-    bPublish = False
+    global sound_state
+    global temp_state
+    global humidity_state
+    global eco2_state
+    
+    should_publish = False
 
 
     # =====================================================
     # GET SENSOR VALUES
     # =====================================================
 
-    iSound = C_MIC_GetSoundLevel()
+    sound = get_sound_level()
 
-    fTemp, fHumidity = C_AHT21_GetData()
+    temperature, humidity = aht21_get_data()
 
 
     # =====================================================
     # SOUND STATES
     # =====================================================
 
-    iPreviousSoundState = iSoundState
+    previous_sound_state = sound_state
 
 
     # Under 30 dB
-    if iSound < 30:
+    if sound < 30:
 
-        iSoundState = STATE_SOUND_VERY_LOW
-
+        sound_state = STATE_SOUND_QUIET
 
     # 30 dB -> 40 dB
-    elif iSound < 40:
-
-        iSoundState = STATE_SOUND_GOOD
-
+    elif sound < 40:
+        sound_state = STATE_SOUND_GOOD
 
     # 40 dB -> 80 dB
-    elif iSound < 80:
-
-        iSoundState = STATE_SOUND_HIGH
-
+    elif sound < 80:
+        sound_state = STATE_SOUND_LOUD
 
     # Over 80 dB
     else:
-
-        iSoundState = STATE_SOUND_VERY_HIGH
+        sound_state = STATE_SOUND_VERY_LOUD
 
 
     # Publish hvis state ændres
-    if iSoundState != iPreviousSoundState:
+    if sound_state != previous_sound_state:
 
         print("EVENT: SOUND STATE CHANGED")
 
-        print(
-            "Old:",
-            iPreviousSoundState,
-            "New:",
-            iSoundState
-        )
-
-        bPublish = True
+        should_publish = True
 
 
     # =====================================================
     # TEMPERATURE STATES
     # =====================================================
 
-    iPreviousTempState = iTempState
+    previous_temp_state = temp_state
 
 
     # Under 17.5°C
-    if fTemp < 17.5:
+    if temperature < 17.5:
 
-        iTempState = STATE_TEMP_TOO_COLD
+        temp_state = STATE_TEMP_TOO_COLD
 
 
     # 17.5°C -> 19.5°C
-    elif fTemp < 19.5:
+    elif temperature < 19.5:
 
-        iTempState = STATE_TEMP_COLD
+        temp_state = STATE_TEMP_COLD
 
 
     # 19.5°C -> 21.5°C
-    elif fTemp < 21.5:
+    elif temperature < 21.5:
 
-        iTempState = STATE_TEMP_GOOD
+        temp_state = STATE_TEMP_GOOD
 
 
     # 21.5°C -> 24.5°C
-    elif fTemp < 24.5:
+    elif temperature < 24.5:
 
-        iTempState = STATE_TEMP_GREAT
+        temp_state = STATE_TEMP_GREAT
 
 
     # Over 24.5°C
     else:
 
-        iTempState = STATE_TEMP_HOT
+        temp_state = STATE_TEMP_HOT
 
 
     # Publish hvis state ændres
-    if iTempState != iPreviousTempState:
-
+    if temp_state != previous_temp_state:
         print("EVENT: TEMP STATE CHANGED")
-
-        print(
-            "Old:",
-            iPreviousTempState,
-            "New:",
-            iTempState
-        )
-
-        bPublish = True
+        should_publish = True
 
 
     # =====================================================
     # HUMIDITY STATES
     # =====================================================
 
-    iPreviousHumidityState = iHumidityState
+    previous_humidity_state = humidity_state
 
 
     # Under 40%
-    if fHumidity < 40:
+    if humidity < 40:
 
-        iHumidityState = STATE_HUMIDITY_LOW
+        humidity_state = STATE_HUMIDITY_LOW
 
 
     # 40% -> 65%
-    elif fHumidity <= 65:
+    elif humidity <= 65:
 
-        iHumidityState = STATE_HUMIDITY_GOOD
+        humidity_state = STATE_HUMIDITY_GOOD
 
 
     # Over 65%
     else:
 
-        iHumidityState = STATE_HUMIDITY_HIGH
+        humidity_state = STATE_HUMIDITY_HIGH
 
 
     # Publish hvis state ændres
-    if iHumidityState != iPreviousHumidityState:
+    if humidity_state != previous_humidity_state:
 
         print("EVENT: HUMIDITY STATE CHANGED")
 
-        print(
-            "Old:",
-            iPreviousHumidityState,
-            "New:",
-            iHumidityState
-        )
-
-        bPublish = True
+        should_publish = True
 
 
     # =====================================================
@@ -263,27 +220,25 @@ def C_EVENT_CheckEvents():
         bPublish = True
 
 
-    return bPublish
+    return should_publish
 
 
 # =====================================================
 # CREATE PAYLOAD
 # =====================================================
 
-def C_EVENT_CreatePayload():
+def create_payload():
+    sound = get_sound_level()
 
-    iSound = C_MIC_GetSoundLevel()
-
-    fTemp, fHumidity = C_AHT21_GetData()
+    temperature, humidity = aht21_get_data()
 
 
     payload = {
 
         # Sensor værdier
-        "temperature": fTemp,
-        "humidity": fHumidity,
-        "sound": iSound,
-        "eco2": fEco2
+        "temperature": temperature,
+        "humidity": humidity,
+        "sound": sound
     }
 
 
