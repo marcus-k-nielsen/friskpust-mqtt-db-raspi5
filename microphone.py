@@ -90,20 +90,28 @@ def calculate_sound_level():
     # Beregner RMS lydniveau
     rms = math.sqrt(total / samples)
 
-    # Software gain / sensitivitet
-    level = rms / 3
+    # Reference værdi til dB beregning
+    REFERENCE = 3000
 
-    # Fjerner baggrundsstøj og små udsving
-    level = level - 100
+    # Undgår math error ved 0
+    if rms < 1:
+        rms = 1
+
+    # Beregn relativ dB
+    level = 20 * math.log10(rms / REFERENCE)
+
+    # Offset så værdierne bliver mere realistiske
+    level += 40
 
     # Sikrer at lydniveau ikke bliver negativt
     if level < 0:
         level = 0
 
+
     # Smoothing gør værdierne mere stabile
     smoothed_level = (
-        (smoothed_level * 0.95)
-        + (level * 0.05)
+        (smoothed_level * 0.99)
+        + (level * 0.01)
     )
 
     # Gemmer det endelige lydniveau
