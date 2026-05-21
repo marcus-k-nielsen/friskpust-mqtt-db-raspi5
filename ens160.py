@@ -53,21 +53,22 @@ def ens160_task():
             read_timer_ms += TASK_INTERVAL_MS
 
     elif state == STATE_COMPENSATE:
-        temp, rh = aht21_get_data() # Data hentes fra AHT21 modulet, og gemmes i temp og rh variablerne
+        temperature_c, relative_humidity_pct = aht21_get_data() # Data hentes fra AHT21 modulet, og gemmes i temp og rh variablerne
+        
         # ENS160 forventer temperatur i Kelvin, der omregnes fra Celsius til Kelvin, og skaleres op med 64 for at få det i det format ENS160 kræver. (Afrunding sker ved at konvertere til int)
-        t_raw  = int((temp + 273.15) * 64) 
+        temperature_raw  = int((temperature_c + 273.15) * 64) 
         # Talet skal pakkes ned og fordeles i 2 bytes, da ENS160 forventer det i det format. Det gøres ved at bruge bitmanipulation til at få low og high byte.
-        t_low     = t_raw & 0xFF    # Beholder de 8 mindste bits for low byte
-        t_high    = t_raw >> 8      # Skifter bits 8 pladser til højre for at få high byte (de 8 mest signifikante bits) --> (længst til venstre, og dermed højst positionelle værdi)
+        temperature_low_byte     = temperature_raw & 0xFF    # Beholder de 8 mindste bits for low byte
+        temperature_high_byte    = temperature_raw >> 8      # Skifter bits 8 pladser til højre for at få high byte (de 8 mest signifikante bits) --> (længst til venstre, og dermed højst positionelle værdi)
 
         # Omregn luftfugtighed til %RH * 512 (ENS160 format)
-        rh_raw    = int(rh * 512)
-        rh_low    = rh_raw & 0xFF
-        rh_high   = rh_raw >> 8
+        relative_humidity_raw    = int(relative_humidity_pct * 512)
+        relative_humidity_low_byte    = relative_humidity_raw & 0xFF
+        relative_humidity_high_byte   = relative_humidity_raw >> 8
 
         # De 2 kompensationsværdier skrives til ENS160, og derefter skifter state til STATE_READ for at læse eCO2 i næste iteration
-        _wr(0x13, [t_low, t_high])      # 0x13 er ENS160 register for temperaturkompensation
-        _wr(0x15, [rh_low, rh_high])    # 0x15 er ENS160 register for luftfugtighedskompensation
+        _wr(0x13, [temperature_low_byte, temperature_high_byte])      # 0x13 er ENS160 register for temperaturkompensation
+        _wr(0x15, [relative_humidity_low_byte, relative_humidity_high_byte])    # 0x15 er ENS160 register for luftfugtighedskompensation
         state = STATE_READ
 
     elif state == STATE_READ:  # Henter seneste eCO2 måling fra ENS160 (ved hjælp af _rd funktionen), og konverterer det fra bytes til int ved at specificere 'little' endian format, da ENS160 sender data i det format.

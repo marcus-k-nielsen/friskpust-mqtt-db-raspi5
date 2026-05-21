@@ -22,16 +22,23 @@ STATE_READ = 3 # Læser data fra sensor
 read_timer_ms = 0 # Tæller hvor mange ms der er gået siden sidste læsning af AHT21
 wait_timer_ms = 0 # Tæller hvor mange ms der er gået siden startkommando blev sendt til AHT21
 state = STATE_IDLE # Gemmer nuværende tilstand i state machine
-temp_c = 0.0 # Gemmer seneste temperaturmåling i °C
-rh_pct = 0.0 # Gemmer seneste luftfugtighedsmåling i %RH
+temperature_c = 0.0 # Gemmer seneste temperaturmåling i °C
+relative_humidity_pct = 0.0 # Gemmer seneste luftfugtighedsmåling i %RH
 
 
 # Private funktioner
 def _aht21_read():
-    d    = i2c.readfrom(0x38, 6)
-    rh   = ((d[1] << 12) | (d[2] << 4) | (d[3] >> 4)) / 2**20 * 100
-    temp = (((d[3] & 0x0F) << 16) | (d[4] << 8) | d[5]) / 2**20 * 200 - 50
-    return temp, rh
+    raw_byte = i2c.readfrom(0x38, 6)
+
+    # Pak rå bytes ud til heltal
+    raw_relative_humidity = (raw_byte[1] << 12) | (raw_byte[2] << 4) | (raw_byte[3] >> 4)
+    raw_temperature = ((raw_byte[3] & 0x0F) << 16) | (raw_byte[4] << 8) | raw_byte[5]
+
+    # Omregn til procent og grader
+    relative_humidity = raw_relative_humidity / 2**20 * 100
+    temperature = raw_temperature / 2**20 * 200 - 50
+
+    return temperature, relative_humidity
 
 
 # Public funktioner
@@ -39,7 +46,7 @@ def aht21_init():
    pass
     
 def aht21_task():
-    global read_timer_ms, wait_timer_ms, state, temp_c, rh_pct
+    global read_timer_ms, wait_timer_ms, state, temperature_c, relative_humidity_pct
  
     if state == STATE_IDLE:
         if read_timer_ms >= READ_INTERVAL_MS:
@@ -60,10 +67,10 @@ def aht21_task():
             wait_timer_ms += TASK_INTERVAL_MS
  
     elif state == STATE_READ:
-        temp_c, rh_pct = _aht21_read() # Kalder _aht21_read() funktionen som læser og omregner data fra AHT21
-        print(f"Temp: {temp_c:.1f}°C  RH: {rh_pct:.1f}%")
+        temperature_c, relative_humidity_pct = _aht21_read() # Kalder _aht21_read() funktionen som læser og omregner data fra AHT21
+        print(f"Temp: {temperature_c:.1f}°C  RH: {relative_humidity_pct:.1f}%")
         state = STATE_IDLE
 
 
 def aht21_get_data(): # Returnerer seneste måling af temperatur og luftfugtighed, uden at bryde loggikken i C_AHT21_Task()
-    return temp_c, rh_pct
+    return temperature_c, relative_humidity_pct
