@@ -49,7 +49,6 @@ def mic_init():
 
 # Returnerer det aktuelle lydniveau
 def get_sound_level():
-
     return sound_level
 
 
@@ -103,22 +102,20 @@ def calculate_sound_level():
         level = 0
 
     # Smoothing gør værdierne mere stabile
-    fSmoothedLevel = (
-        (fSmoothedLevel * 0.95)
+    smoothed_level = (
+        (smoothed_level * 0.95)
         + (level * 0.05)
     )
 
     # Gemmer det endelige lydniveau
-    iSoundLevel = int(fSmoothedLevel)
+    sound_level = int(smoothed_level)
 
 
 # Task funktion som kaldes af TaskManageren
-def C_MIC_Task():
-
-    C_MIC_Calculate()
+def microphone_task():
+    calculate_sound_level()
 
 
 # Debug task som printer lydniveauet
-def C_Debug_Task():
-
-    print(C_MIC_GetSoundLevel())
+def debug_task():
+    print(get_sound_level())

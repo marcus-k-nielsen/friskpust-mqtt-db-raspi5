@@ -3,6 +3,7 @@
 
 from microphone import *
 from aht21 import *
+from ens160 import *
 
 import ujson
 
@@ -50,9 +51,13 @@ STATE_ECO2_BAD = 1
 # =====================================================
 
 sound_state = STATE_SOUND_GOOD
+
 temp_state = STATE_TEMP_GOOD
+
 humidity_state = STATE_HUMIDITY_GOOD
+
 eco2_state = STATE_ECO2_GOOD
+
 
 # =====================================================
 # CHECK EVENTS
@@ -64,7 +69,8 @@ def check_events():
     global temp_state
     global humidity_state
     global eco2_state
-    
+
+
     should_publish = False
 
 
@@ -76,6 +82,8 @@ def check_events():
 
     temperature, humidity = aht21_get_data()
 
+    eco2 = ens160_get_eco2()
+
 
     # =====================================================
     # SOUND STATES
@@ -84,25 +92,23 @@ def check_events():
     previous_sound_state = sound_state
 
 
-    # Under 30 dB
     if sound < 30:
 
         sound_state = STATE_SOUND_QUIET
 
-    # 30 dB -> 40 dB
     elif sound < 40:
+
         sound_state = STATE_SOUND_GOOD
 
-    # 40 dB -> 80 dB
     elif sound < 80:
+
         sound_state = STATE_SOUND_LOUD
 
-    # Over 80 dB
     else:
+
         sound_state = STATE_SOUND_VERY_LOUD
 
 
-    # Publish hvis state ændres
     if sound_state != previous_sound_state:
 
         print("EVENT: SOUND STATE CHANGED")
@@ -117,39 +123,31 @@ def check_events():
     previous_temp_state = temp_state
 
 
-    # Under 17.5°C
     if temperature < 17.5:
 
         temp_state = STATE_TEMP_TOO_COLD
 
-
-    # 17.5°C -> 19.5°C
     elif temperature < 19.5:
 
         temp_state = STATE_TEMP_COLD
 
-
-    # 19.5°C -> 21.5°C
     elif temperature < 21.5:
 
         temp_state = STATE_TEMP_GOOD
 
-
-    # 21.5°C -> 24.5°C
     elif temperature < 24.5:
 
         temp_state = STATE_TEMP_GREAT
 
-
-    # Over 24.5°C
     else:
 
         temp_state = STATE_TEMP_HOT
 
 
-    # Publish hvis state ændres
     if temp_state != previous_temp_state:
+
         print("EVENT: TEMP STATE CHANGED")
+
         should_publish = True
 
 
@@ -160,25 +158,19 @@ def check_events():
     previous_humidity_state = humidity_state
 
 
-    # Under 40%
     if humidity < 40:
 
         humidity_state = STATE_HUMIDITY_LOW
 
-
-    # 40% -> 65%
     elif humidity <= 65:
 
         humidity_state = STATE_HUMIDITY_GOOD
 
-
-    # Over 65%
     else:
 
         humidity_state = STATE_HUMIDITY_HIGH
 
 
-    # Publish hvis state ændres
     if humidity_state != previous_humidity_state:
 
         print("EVENT: HUMIDITY STATE CHANGED")
@@ -190,34 +182,26 @@ def check_events():
     # ECO2 STATES
     # =====================================================
 
-    iPreviousEco2State = iEco2State
+    previous_eco2_state = eco2_state
 
 
-    # Over 0.1%
-    if fEco2 > 0.1:
+    # Under 1000 ppm
+    if eco2 < 1000:
 
-        iEco2State = STATE_ECO2_BAD
+        eco2_state = STATE_ECO2_GOOD
 
 
-    # Under 0.1%
+    # Over 1000 ppm
     else:
 
-        iEco2State = STATE_ECO2_GOOD
+        eco2_state = STATE_ECO2_BAD
 
 
-    # Publish hvis state ændres
-    if iEco2State != iPreviousEco2State:
+    if eco2_state != previous_eco2_state:
 
         print("EVENT: ECO2 STATE CHANGED")
 
-        print(
-            "Old:",
-            iPreviousEco2State,
-            "New:",
-            iEco2State
-        )
-
-        bPublish = True
+        should_publish = True
 
 
     return should_publish
@@ -228,17 +212,25 @@ def check_events():
 # =====================================================
 
 def create_payload():
+
     sound = get_sound_level()
 
     temperature, humidity = aht21_get_data()
 
+    eco2 = ens160_get_eco2()
+
 
     payload = {
 
-        # Sensor værdier
         "temperature": temperature,
         "humidity": humidity,
-        "sound": sound
+        "sound": sound,
+        "eco2": eco2,
+
+        "temp_state": temp_state,
+        "humidity_state": humidity_state,
+        "sound_state": sound_state,
+        "eco2_state": eco2_state
     }
 
 

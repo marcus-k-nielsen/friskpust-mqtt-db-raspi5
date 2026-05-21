@@ -1,9 +1,9 @@
 from machine import Timer
 from C_TaskManager import *
-from C_Microphone import *
+from microphone import *
 from aht21 import *
 from ens160 import *
-from C_MQTT import *
+from mqtt import *
 
 
 # Timer interrupt callback
@@ -41,12 +41,12 @@ C_TM_CreateTask(
     # Hvor ofte tasken skal køres
     MIC_TASK_INTERVAL_MS,
     # Funktion som skal køres
-    C_MIC_Task
+    microphone_task
 )
 
 
 # Debug task som printer lydniveau
-C_TM_CreateTask("DEBUG TASK",500,C_Debug_Task)
+C_TM_CreateTask("DEBUG TASK",500,debug_task)
 
 # Temperatur og luftfugtighed task
 C_TM_CreateTask("AHT21 TASK",100,aht21_task)

@@ -42,7 +42,7 @@ def ens160_init():
     _wr(0x10, 0x02)     # 0x10 er ENS160 styreregister --> 0x02 start standard måletilstand
     time.sleep_ms(50)
 
-def task():
+def ens160_task():
     global read_timer_ms, state, eco2_ppm
 
     if state == STATE_IDLE:
@@ -75,5 +75,5 @@ def task():
         print(f"eCO2: {eco2_ppm}ppm")
         state = STATE_IDLE
 
-def get_eco2():
+def ens160_get_eco2():
     return eco2_ppm

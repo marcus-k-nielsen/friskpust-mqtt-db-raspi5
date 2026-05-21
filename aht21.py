@@ -3,7 +3,7 @@
 # SDA=GPIO4, SCL=GPIO5, VCC=3.3V, GND=GND
 from machine import I2C, Pin
 
-# Hardware config
+# I2C setup
 i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=100_000)
 
 # Intevaller
@@ -21,9 +21,9 @@ STATE_READ = 3 # Læser data fra sensor
 # Variabler
 read_timer_ms = 0 # Tæller hvor mange ms der er gået siden sidste læsning af AHT21
 wait_timer_ms = 0 # Tæller hvor mange ms der er gået siden startkommando blev sendt til AHT21
-state        = STATE_IDLE # Gemmer nuværende tilstand i state machine
-temp_c       = 0.0 # Gemmer seneste temperaturmåling i °C
-rh_pct       = 0.0 # Gemmer seneste luftfugtighedsmåling i %RH
+state = STATE_IDLE # Gemmer nuværende tilstand i state machine
+temp_c = 0.0 # Gemmer seneste temperaturmåling i °C
+rh_pct = 0.0 # Gemmer seneste luftfugtighedsmåling i %RH
 
 
 # Private funktioner
