@@ -225,12 +225,7 @@ def create_payload():
         "temperature": temperature,
         "humidity": humidity,
         "sound": sound,
-        "eco2": eco2,
-
-        "temp_state": temp_state,
-        "humidity_state": humidity_state,
-        "sound_state": sound_state,
-        "eco2_state": eco2_state
+        "eco2": eco2
     }
 
 

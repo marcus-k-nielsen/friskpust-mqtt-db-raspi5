@@ -33,7 +33,6 @@ audio_in = I2S(
 # Mikrofon samples læses ind her
 buffer = bytearray(256)
 
-
 # Variabel som gemmer det færdige lydniveau
 sound_level = 0
 
