@@ -4,7 +4,7 @@
 
 from machine import I2C, Pin
 import time
-import aht21
+from aht21 import aht21_get_data
 
 # Hardware config
 i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=100_000)
@@ -53,7 +53,7 @@ def ens160_task():
             read_timer_ms += TASK_INTERVAL_MS
 
     elif state == STATE_COMPENSATE:
-        temp, rh = aht21.get_data() # Data hentes fra AHT21 modulet, og gemmes i temp og rh variablerne
+        temp, rh = aht21_get_data() # Data hentes fra AHT21 modulet, og gemmes i temp og rh variablerne
         # ENS160 forventer temperatur i Kelvin, der omregnes fra Celsius til Kelvin, og skaleres op med 64 for at få det i det format ENS160 kræver. (Afrunding sker ved at konvertere til int)
         t_raw  = int((temp + 273.15) * 64) 
         # Talet skal pakkes ned og fordeles i 2 bytes, da ENS160 forventer det i det format. Det gøres ved at bruge bitmanipulation til at få low og high byte.
