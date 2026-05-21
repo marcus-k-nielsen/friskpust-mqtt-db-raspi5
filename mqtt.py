@@ -5,7 +5,7 @@ import network
 
 from umqtt.simple import MQTTClient
 
-from C_EventManager import *
+from eventMannager import *
 
 
 # =========================
@@ -20,7 +20,7 @@ MQTT_PUBLISH_INTERVAL_MS = 600000
 
 # WiFi credentials
 WIFI_SSID = "Asus2"
-WIFI_PASSWORD = "YOUR_PASSWORD"
+WIFI_PASSWORD = "NowakogNielsen2528"
 
 
 # MQTT broker config
@@ -49,12 +49,12 @@ wlan = network.WLAN(network.STA_IF)
 
 mqttClient = None
 
-iState = STATE_WIFI_CONNECT
+state  = STATE_WIFI_CONNECT
 
-iPublishTimer_ms = 0
+publish_timer_ms = 0
 
-bWifiConnected = False
-bMqttConnected = False
+wifi_connected = False
+mqtt_connected = False
 
 
 # =========================
@@ -63,18 +63,18 @@ bMqttConnected = False
 
 def mqtt_init():
 
-    global iState
+    global state
 
     wlan.active(True)
 
-    iState = STATE_WIFI_CONNECT
+    state = STATE_WIFI_CONNECT
 
 
 # =========================
 # WIFI CONNECT
 # =========================
 
-def C_MQTT_StartWiFi():
+def start_wifi():
 
     print("Connecting to WiFi...")
 
@@ -88,124 +88,134 @@ def C_MQTT_StartWiFi():
 # MQTT CONNECT
 # =========================
 
-def C_MQTT_ConnectBroker():
+def connect_broker():
 
-    global mqttClient
-    global bMqttConnected
+    global mqtt_client
+    global mqtt_connected
+
 
     try:
 
-        mqttClient = MQTTClient(
+        mqtt_client = MQTTClient(
             MQTT_CLIENT_ID,
             MQTT_BROKER
         )
 
-        mqttClient.connect()
+        mqtt_client.connect()
 
-        bMqttConnected = True
+        mqtt_connected = True
 
         print("MQTT connected")
 
-    except Exception as e:
 
-        mqttClient = None
+    except Exception as error:
 
-        bMqttConnected = False
+        mqtt_client = None
+
+        mqtt_connected = False
 
         print("MQTT failed")
-        print(e)
+
+        print(error)
 
 
 # =========================
 # PUBLISH
 # =========================
 
-def C_MQTT_Publish():
+def publish():
 
-    global mqttClient
+    global mqtt_client
 
-    if bMqttConnected == False:
+
+    if not mqtt_connected:
         return
 
 
-    payload = C_EVENT_CreatePayload()
+    payload = create_payload()
 
 
     try:
 
-        mqttClient.publish(
+        mqtt_client.publish(
             MQTT_TOPIC,
             payload
         )
 
         print("MQTT Published:")
+
         print(payload)
 
-    except Exception as e:
+
+    except Exception as error:
 
         print("MQTT publish failed")
-        print(e)
+
+        print(error)
+
+
 
 
 # =========================
 # TASK
 # =========================
 
-def C_MQTT_Task():
+def mqtt_task():
 
-    global iState
-    global iPublishTimer_ms
-    global bWifiConnected
-    global bMqttConnected
+    global state
+    global publish_timer_ms
+    global wifi_connected
+    global mqtt_connected
 
 
     # =========================
     # WIFI CONNECT
     # =========================
 
-    if iState == STATE_WIFI_CONNECT:
+    if state == STATE_WIFI_CONNECT:
 
-        C_MQTT_StartWiFi()
+        start_wifi()
 
-        iState = STATE_WIFI_WAIT
+        state = STATE_WIFI_WAIT
 
 
     # =========================
     # WIFI WAIT
     # =========================
 
-    elif iState == STATE_WIFI_WAIT:
+    elif state == STATE_WIFI_WAIT:
 
         if wlan.isconnected():
 
-            bWifiConnected = True
+            wifi_connected = True
 
             print("WiFi connected")
+
             print(wlan.ifconfig())
 
-            iState = STATE_MQTT_CONNECT
+            state = STATE_MQTT_CONNECT
 
 
     # =========================
     # MQTT CONNECT
     # =========================
 
-    elif iState == STATE_MQTT_CONNECT:
+    elif state == STATE_MQTT_CONNECT:
 
-        if bMqttConnected == False:
+        if not mqtt_connected:
 
-            C_MQTT_ConnectBroker()
+            connect_broker()
 
-        if bMqttConnected:
+        if mqtt_connected:
 
-            iState = STATE_RUNNING
+            state = STATE_RUNNING
 
 
     # =========================
     # RUNNING
     # =========================
 
-    elif iState == STATE_RUNNING:
+    elif state == STATE_RUNNING:
 
 
         # Detect WiFi disconnect
@@ -213,29 +223,29 @@ def C_MQTT_Task():
 
             print("WiFi disconnected")
 
-            bWifiConnected = False
-            bMqttConnected = False
+            wifi_connected = False
+            mqtt_connected = False
 
-            iState = STATE_WIFI_CONNECT
+            state = STATE_WIFI_CONNECT
 
             return
 
 
+
         # Event publish
-        if C_EVENT_CheckEvents():
+        if check_events():
 
-            C_MQTT_Publish()
-
+            publish()
 
         # Periodic publish
-        if iPublishTimer_ms >= MQTT_PUBLISH_INTERVAL_MS:
+        if publish_timer_ms >= MQTT_PUBLISH_INTERVAL_MS:
 
-            iPublishTimer_ms = 0
+            publish_timer_ms = 0
 
             print("Periodic publish")
 
-            C_MQTT_Publish()
+            publish()
 
         else:
 
-            iPublishTimer_ms += MQTT_TASK_INTERVAL_MS
+            publish_timer_ms += MQTT_TASK_INTERVAL_MS
