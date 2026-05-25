@@ -26,6 +26,8 @@ WIFI_PASSWORD = "NowakogNielsen2528"
 # MQTT broker config
 MQTT_BROKER = "192.168.50.115"
 MQTT_CLIENT_ID = "FriskPust01"
+MQTT_USER = b"pico"
+MQTT_PASSWORD = b"Semester2026"
 
 # MQTT topic
 MQTT_TOPIC = b"friskpust/classroom01"
@@ -47,7 +49,7 @@ STATE_RUNNING = 3
 
 wlan = network.WLAN(network.STA_IF)
 
-mqttClient = None
+mqtt_client = None
 
 state  = STATE_WIFI_CONNECT
 
@@ -81,6 +83,7 @@ def start_wifi():
     wlan.connect(
         WIFI_SSID,
         WIFI_PASSWORD
+        
     )
 
 
@@ -98,7 +101,9 @@ def connect_broker():
 
         mqtt_client = MQTTClient(
             MQTT_CLIENT_ID,
-            MQTT_BROKER
+            MQTT_BROKER,
+            MQTT_USER,
+            MQTT_PASSWORD
         )
 
         mqtt_client.connect()

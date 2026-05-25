@@ -46,7 +46,7 @@ C_TM_CreateTask(
 
 
 # Debug task som printer lydniveau
-C_TM_CreateTask("DEBUG TASK",500,debug_task)
+C_TM_CreateTask("DEBUG TASK",5000,debug_task)
 
 # Temperatur og luftfugtighed task
 C_TM_CreateTask("AHT21 TASK",100,aht21_task)
