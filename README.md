@@ -61,7 +61,7 @@ The received values are stored in the `measurements` table in Supabase.
 
 * **Python**
 * **Raspberry Pi 5**
-* * **MQTT**
+* **MQTT**
 * **Paho MQTT**
 * **Supabase**
 * **JSON**
