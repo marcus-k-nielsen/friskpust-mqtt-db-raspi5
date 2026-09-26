@@ -70,7 +70,7 @@ The received values are stored in the `measurements` table in Supabase.
 ## Project Structure
 
 ```text
-MQTTData-To-Database-On-Ras5/
+friskpust-mqtt-db-raspi5/
 │
 ├── app/
 │   ├── __init__.py
